@@ -28,8 +28,11 @@ export function BottomNav() {
   const mainItems = NAV_ITEMS.slice(0, 5);
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 safe-area-pb">
-      <div className="flex items-stretch justify-around max-w-lg mx-auto">
+    <nav
+      className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-slate-900 border-t-2 border-slate-200 dark:border-slate-700 shadow-[0_-2px_12px_rgba(0,0,0,0.08)]"
+      style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+    >
+      <div className="flex items-stretch justify-around max-w-lg mx-auto h-16">
         {mainItems.map(({ href, label, icon: Icon }) => {
           const active = pathname === href || pathname.startsWith(href + '/');
           return (
@@ -37,14 +40,19 @@ export function BottomNav() {
               key={href}
               href={href}
               className={cn(
-                'flex flex-col items-center justify-center gap-0.5 px-2 py-2 min-w-0 flex-1 transition-colors text-xs font-medium',
+                'flex flex-col items-center justify-center gap-1 px-1 min-w-0 flex-1 transition-all duration-150 text-xs font-medium',
                 active
                   ? 'text-green-600 dark:text-green-400'
-                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
+                  : 'text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
               )}
             >
-              <Icon size={22} strokeWidth={active ? 2.5 : 1.8} />
-              <span className="truncate">{label}</span>
+              <div className={cn(
+                'flex items-center justify-center w-10 h-6 rounded-full transition-colors',
+                active && 'bg-green-50 dark:bg-green-900/30'
+              )}>
+                <Icon size={21} strokeWidth={active ? 2.5 : 1.8} />
+              </div>
+              <span className="truncate leading-none">{label}</span>
             </Link>
           );
         })}
