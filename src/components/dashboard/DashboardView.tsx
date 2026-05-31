@@ -165,6 +165,12 @@ export function DashboardView() {
           </h1>
         </div>
         <div className="flex gap-2">
+          <Link href="/weight-tracker" title="Zaznamenat váhu">
+            <div className="p-2 rounded-xl bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors text-blue-600 dark:text-blue-400">⚖️</div>
+          </Link>
+          <Link href="/ai-advisor" title="AI Rádce">
+            <div className="p-2 rounded-xl bg-purple-50 dark:bg-purple-900/20 hover:bg-purple-100 dark:hover:bg-purple-900/40 transition-colors">🤖</div>
+          </Link>
           <button
             onClick={handleGeneratePlan}
             title="Vygenerovat nový jídelníček"
@@ -239,35 +245,6 @@ export function DashboardView() {
         </Card>
       )}
 
-      {/* Quick links */}
-      <div className="grid grid-cols-2 gap-3">
-        <Link href="/weight-tracker">
-          <Card className="hover:shadow-md transition-shadow">
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                <span className="text-lg">⚖️</span>
-              </div>
-              <div>
-                <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">Zaznamenat váhu</div>
-                <div className="text-xs text-slate-500">Sleduj pokrok</div>
-              </div>
-            </CardContent>
-          </Card>
-        </Link>
-        <Link href="/ai-advisor">
-          <Card className="hover:shadow-md transition-shadow">
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
-                <span className="text-lg">🤖</span>
-              </div>
-              <div>
-                <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">AI Rádce</div>
-                <div className="text-xs text-slate-500">Zeptej se</div>
-              </div>
-            </CardContent>
-          </Card>
-        </Link>
-      </div>
     </div>
   );
 }
