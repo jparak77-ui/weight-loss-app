@@ -21,7 +21,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <div className={cn('min-h-screen bg-slate-50 dark:bg-slate-950', theme === 'dark' && 'dark')}>
       <SideNav />
       <main className="lg:ml-60 min-h-screen">
-        <div className="max-w-4xl mx-auto px-4 py-6 pb-28 lg:pb-8">
+        <div className="max-w-4xl mx-auto px-4 py-6 pb-36 lg:pb-8">
           {children}
         </div>
       </main>
