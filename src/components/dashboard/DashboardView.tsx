@@ -6,7 +6,7 @@ import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { MacroRing, MacroBar } from '@/components/ui/MacroRing';
 import { Badge } from '@/components/ui/Badge';
-import { MEAL_TYPE_LABELS, getDayName, formatDate, getTodayString, getPhaseColor, getPhaseLabel } from '@/lib/utils';
+import { MEAL_TYPE_LABELS, getDayName, formatDate, getTodayString, getPhaseColor, getPhaseLabel, formatIngredientDetail } from '@/lib/utils';
 import { generateMealPlan } from '@/lib/meal-generator';
 import { Droplets, Plus, Minus, CheckCircle2, Circle, ArrowRight, Zap, Flame, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
@@ -94,11 +94,10 @@ function MealItem({ meal, date, onToggle }: { meal: any; date: string; onToggle:
         <div className="px-3 pb-3 border-t border-slate-100 dark:border-slate-700 mt-0 pt-2">
           <div className="space-y-1 mb-2">
             {meal.ingredients.map((ing: any, i: number) => (
-              <div key={i} className="flex justify-between text-xs text-slate-600 dark:text-slate-400">
-                <span>{ing.foodName}</span>
-                <span className="font-medium">
-                  {ing.amountRaw}g
-                  {ing.amountCooked && <span className="text-slate-400 ml-1">(uv. ~{ing.amountCooked}g)</span>}
+              <div key={i} className="flex justify-between text-xs gap-2">
+                <span className="text-slate-700 dark:text-slate-300">{ing.foodName}</span>
+                <span className="font-semibold text-slate-900 dark:text-slate-100 shrink-0">
+                  {formatIngredientDetail(ing)}
                 </span>
               </div>
             ))}

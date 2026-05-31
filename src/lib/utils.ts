@@ -120,6 +120,29 @@ export function getPhaseColor(phase?: string): string {
   }
 }
 
+export function formatIngredientAmount(ing: import('@/types').MealIngredient): string {
+  if (ing.displayUnit && ing.displayUnit !== 'g' && ing.displayUnit !== 'ml' && ing.displayCount) {
+    return `${ing.displayCount} ${ing.displayUnit}`;
+  }
+  if (ing.displayUnit === 'ml') {
+    return `${ing.amountRaw} ml`;
+  }
+  return `${ing.amountRaw} g`;
+}
+
+export function formatIngredientDetail(ing: import('@/types').MealIngredient): string {
+  const base = formatIngredientAmount(ing);
+  // pro vejce nebo ks ukážeme i gramy
+  if (ing.displayUnit && ing.displayUnit !== 'g' && ing.displayUnit !== 'ml' && ing.displayCount) {
+    const cookedInfo = ing.amountCooked ? ` → ~${ing.amountCooked} g uvařeno` : '';
+    return `${base} (${ing.amountRaw} g)${cookedInfo}`;
+  }
+  if (ing.amountCooked) {
+    return `${base} → ~${ing.amountCooked} g uvařeno`;
+  }
+  return base;
+}
+
 export function getPhaseLabel(phase?: string): string {
   switch (phase) {
     case 'zero': return 'Nulové sacharidy';

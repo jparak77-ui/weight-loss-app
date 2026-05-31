@@ -116,9 +116,11 @@ export interface FoodItem {
 export interface MealIngredient {
   foodId: string;
   foodName: string;
-  amountRaw: number;
-  amountCooked?: number;
-  unit: string;
+  amountRaw: number;       // vždy v gramech (pro nákupní seznam)
+  amountCooked?: number;   // gramy po uvaření
+  unit: string;            // 'g' nebo 'ml'
+  displayCount?: number;   // přirozené množství (3 pro 3 vejce)
+  displayUnit?: string;    // přirozená jednotka ('ks', 'krajíc', 'lžíce')
   calories: number;
   protein: number;
   carbs: number;

@@ -5,7 +5,7 @@ import { useAppStore } from '@/store/appStore';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
-import { MEAL_TYPE_LABELS, formatDate, getDayName, getPhaseColor, getPhaseLabel } from '@/lib/utils';
+import { MEAL_TYPE_LABELS, formatDate, getDayName, getPhaseColor, getPhaseLabel, formatIngredientDetail } from '@/lib/utils';
 import { generateMealPlan, generateShoppingList } from '@/lib/meal-generator';
 import { Select } from '@/components/ui/Input';
 import { CheckCircle2, Circle, ChevronDown, ChevronUp, RefreshCw, ShoppingBag, Zap } from 'lucide-react';
@@ -38,11 +38,12 @@ function MealCard({ meal, date, onToggle }: { meal: Meal; date: string; onToggle
             <div className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Suroviny:</div>
             <div className="space-y-1">
               {meal.ingredients.map((ing, i) => (
-                <div key={i} className="flex justify-between text-xs">
+                <div key={i} className="flex justify-between items-start gap-2 text-xs py-0.5">
                   <span className="text-slate-700 dark:text-slate-300">{ing.foodName}</span>
-                  <span className="text-slate-500 font-medium">
-                    {ing.amountRaw}g
-                    {ing.amountCooked && <span className="text-slate-400"> → ~{ing.amountCooked}g uvařeno</span>}
+                  <span className="text-right shrink-0">
+                    <span className="font-semibold text-slate-900 dark:text-slate-100">
+                      {formatIngredientDetail(ing)}
+                    </span>
                     <span className="text-slate-400 ml-1">({ing.calories} kcal)</span>
                   </span>
                 </div>

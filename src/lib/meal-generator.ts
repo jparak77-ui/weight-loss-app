@@ -236,6 +236,47 @@ export function getCarbCyclePattern(type: CarbCycleType): CarbCycleDay[] {
   }
 }
 
+function roundToStep(value: number, step: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, Math.round(value / step) * step));
+}
+
+function toNaturalUnit(food: FoodItem, grams: number): { displayCount: number; displayUnit: string; actualGrams: number } {
+  if (food.gramsPerUnit && food.unit && food.unit !== 'g' && food.unit !== 'ml') {
+    const count = Math.max(1, Math.round(grams / food.gramsPerUnit));
+    return { displayCount: count, displayUnit: food.unit, actualGrams: count * food.gramsPerUnit };
+  }
+  // zaokrouhlit na praktické číslo podle kategorie
+  let step = 25;
+  let min = 25;
+  let max = 500;
+  if (food.category === 'fats' && food.unit === 'ml') { step = 5; min = 5; max = 25; }
+  else if (food.category === 'fats') { step = 5; min = 5; max = 40; }
+  else if (food.category === 'grains') { step = 10; min = 30; max = 200; }
+  else if (food.category === 'vegetables' || food.category === 'fruit') { step = 25; min = 50; max = 300; }
+  else if (food.category === 'meat' || food.category === 'fish') { step = 25; min = 100; max = 350; }
+  else if (food.category === 'dairy') { step = 25; min = 75; max = 300; }
+  const rounded = roundToStep(grams, step, min, max);
+  return { displayCount: rounded, displayUnit: food.unit || 'g', actualGrams: rounded };
+}
+
+function buildIngredient(food: FoodItem, gramsTarget: number): MealIngredient {
+  const { displayCount, displayUnit, actualGrams } = toNaturalUnit(food, gramsTarget);
+  const nutrition = calcFoodNutrition(food, actualGrams);
+  const cookedGrams = food.cookingMultiplier
+    ? Math.round(actualGrams * food.cookingMultiplier)
+    : undefined;
+  return {
+    foodId: food.id,
+    foodName: food.name,
+    amountRaw: actualGrams,
+    amountCooked: cookedGrams,
+    unit: food.unit || 'g',
+    displayCount,
+    displayUnit,
+    ...nutrition,
+  };
+}
+
 function buildMealFromTemplate(
   template: MealTemplate,
   targetCalories: number,
@@ -250,117 +291,119 @@ function buildMealFromTemplate(
   let totalCarbs = 0;
   let totalFat = 0;
 
+  const addNutrition = (ing: MealIngredient) => {
+    totalCals += ing.calories;
+    totalProtein += ing.protein;
+    totalCarbs += ing.carbs;
+    totalFat += ing.fat;
+  };
+
   const getFood = (ids: string[]): FoodItem | undefined => {
     for (const id of ids) {
       const food = availableFoods.find((f) => f.id === id);
       if (food) return food;
     }
-    return availableFoods.find((f) => ids.some((id) => f.id === id));
+    return undefined;
   };
 
+  // --- bílkovinná složka ---
   const proteinFood = getFood(template.proteinFoods);
   if (proteinFood) {
-    const proteinNeeded = Math.min(targetProtein, targetProtein * 0.8);
-    const grams = Math.round((proteinNeeded / proteinFood.proteinPer100g) * 100);
-    const clampedGrams = Math.max(80, Math.min(300, grams));
-    const nutrition = calcFoodNutrition(proteinFood, clampedGrams);
-    const cookedGrams = proteinFood.cookingMultiplier
-      ? Math.round(clampedGrams * proteinFood.cookingMultiplier)
-      : undefined;
-
-    ingredients.push({
-      foodId: proteinFood.id,
-      foodName: proteinFood.name,
-      amountRaw: clampedGrams,
-      amountCooked: cookedGrams,
-      unit: 'g',
-      ...nutrition,
-    });
-    totalCals += nutrition.calories;
-    totalProtein += nutrition.protein;
-    totalCarbs += nutrition.carbs;
-    totalFat += nutrition.fat;
+    // cílový příjem bílkovin z tohoto jídla → kolik gramů potraviny
+    const gramsTarget = (targetProtein * 0.85 / proteinFood.proteinPer100g) * 100;
+    const ing = buildIngredient(proteinFood, gramsTarget);
+    ingredients.push(ing);
+    addNutrition(ing);
   }
 
-  if (!isLowCarb && template.carbFoods.length > 0) {
-    const carbFood = getFood(template.carbFoods);
-    if (carbFood && carbFood.carbsPer100g > 10) {
-      const remainingCals = targetCalories - totalCals;
-      const grams = Math.round((remainingCals * 0.4 * 100) / carbFood.caloriesPer100g);
-      const clampedGrams = Math.max(50, Math.min(200, grams));
-      const nutrition = calcFoodNutrition(carbFood, clampedGrams);
-      const cookedGrams = carbFood.cookingMultiplier
-        ? Math.round(clampedGrams * carbFood.cookingMultiplier)
-        : undefined;
-
-      ingredients.push({
-        foodId: carbFood.id,
-        foodName: carbFood.name,
-        amountRaw: clampedGrams,
-        amountCooked: cookedGrams,
-        unit: 'g',
-        ...nutrition,
-      });
-      totalCals += nutrition.calories;
-      totalCarbs += nutrition.carbs;
-      totalFat += nutrition.fat;
-      totalProtein += nutrition.protein;
+  // --- druhá bílkovina (např. šunka k vejcím, tuňák + vejce) ---
+  if (template.proteinFoods.length > 1) {
+    const proteinFood2 = getFood(template.proteinFoods.slice(1));
+    if (proteinFood2 && proteinFood2.id !== proteinFood?.id) {
+      const gramsTarget = (targetProtein * 0.3 / proteinFood2.proteinPer100g) * 100;
+      const ing = buildIngredient(proteinFood2, gramsTarget);
+      ingredients.push(ing);
+      addNutrition(ing);
     }
   }
 
+  // --- sacharidová složka ---
+  if (!isLowCarb && template.carbFoods.length > 0) {
+    const carbFood = getFood(template.carbFoods);
+    if (carbFood && carbFood.carbsPer100g > 8) {
+      const remainingCals = Math.max(100, targetCalories - totalCals);
+      const gramsTarget = (remainingCals * 0.40 / carbFood.caloriesPer100g) * 100;
+      const ing = buildIngredient(carbFood, gramsTarget);
+      ingredients.push(ing);
+      addNutrition(ing);
+    }
+  }
+
+  // --- zelenina ---
   const vegIds = template.vegFoods.slice(0, 2);
   for (const vegId of vegIds) {
     const vegFood = availableFoods.find((f) => f.id === vegId);
     if (vegFood) {
-      const grams = isLowCarb ? 150 : 100;
-      const nutrition = calcFoodNutrition(vegFood, grams);
-      ingredients.push({
-        foodId: vegFood.id,
-        foodName: vegFood.name,
-        amountRaw: grams,
-        unit: 'g',
-        ...nutrition,
-      });
-      totalCals += nutrition.calories;
-      totalCarbs += nutrition.carbs;
-      totalFat += nutrition.fat;
-      totalProtein += nutrition.protein;
+      const ing = buildIngredient(vegFood, isLowCarb ? 150 : 100);
+      ingredients.push(ing);
+      addNutrition(ing);
     }
   }
 
-  if (totalCals < targetCalories * 0.7) {
+  // --- tuková složka (doplnění kalorií) ---
+  if (totalCals < targetCalories * 0.65 && template.fatFoods.length > 0) {
     const fatFood = getFood(template.fatFoods);
     if (fatFood) {
       const remaining = targetCalories - totalCals;
-      const grams = Math.round((remaining * 0.5 * 100) / fatFood.caloriesPer100g);
-      const clampedGrams = Math.max(5, Math.min(30, grams));
-      const nutrition = calcFoodNutrition(fatFood, clampedGrams);
-      ingredients.push({
-        foodId: fatFood.id,
-        foodName: fatFood.name,
-        amountRaw: clampedGrams,
-        unit: fatFood.unit || 'g',
-        ...nutrition,
-      });
-      totalCals += nutrition.calories;
-      totalCarbs += nutrition.carbs;
-      totalFat += nutrition.fat;
-      totalProtein += nutrition.protein;
+      const gramsTarget = (remaining * 0.5 / fatFood.caloriesPer100g) * 100;
+      const ing = buildIngredient(fatFood, gramsTarget);
+      ingredients.push(ing);
+      addNutrition(ing);
     }
   }
+
+  // --- instrukce s reálnými gramáží ---
+  const instructions = buildInstructions(template, ingredients);
 
   return {
     id: uuidv4(),
     type: template.type,
     name: template.name,
     ingredients,
-    instructions: template.instructions,
+    instructions,
     totalCalories: Math.round(totalCals),
     totalProtein: Math.round(totalProtein * 10) / 10,
     totalCarbs: Math.round(totalCarbs * 10) / 10,
     totalFat: Math.round(totalFat * 10) / 10,
     completed: false,
   };
+}
+
+function formatIngAmt(ing: MealIngredient): string {
+  if (ing.displayUnit && ing.displayUnit !== 'g' && ing.displayUnit !== 'ml' && ing.displayCount) {
+    return `${ing.displayCount} ${ing.displayUnit}`;
+  }
+  return `${ing.amountRaw} g`;
+}
+
+function buildInstructions(template: MealTemplate, ingredients: MealIngredient[]): string[] {
+  // Nahraď generické instrukce konkrétními s gramážemi
+  return template.instructions.map((step) => {
+    let result = step;
+    for (const ing of ingredients) {
+      const amt = formatIngAmt(ing);
+      // zkus nahradit "vejce", "rýži", "kuřecí", atd. konkrétní hodnotou
+      const nameLower = ing.foodName.toLowerCase();
+      if (result.toLowerCase().includes('vejce') && nameLower.includes('vejc')) {
+        result = result.replace(/vejce/i, `${amt} vejce`);
+      } else if (result.toLowerCase().includes('rýži') && nameLower.includes('rýž')) {
+        result = result.replace(/rýži/i, `${amt} rýže`);
+      } else if (result.toLowerCase().includes('ovesné vločky') && nameLower.includes('ovesn')) {
+        result = result.replace(/ovesné vločky/i, `${amt} ovesných vloček`);
+      }
+    }
+    return result;
+  });
 }
 
 function getMealTypes(mealsPerDay: number): MealType[] {
