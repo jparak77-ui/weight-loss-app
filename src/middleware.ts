@@ -1,56 +1,26 @@
-import { createServerClient } from '@supabase/ssr';
-import { NextResponse, type NextRequest } from 'next/server';
+import { auth } from '@/auth';
+import { NextResponse } from 'next/server';
 
-const PUBLIC_ROUTES = ['/login', '/register'];
+const PUBLIC_ROUTES = ['/login'];
 
-export async function middleware(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({ request });
+export default auth((req) => {
+  const { nextUrl, auth: session } = req;
+  const isLoggedIn = !!session;
+  const isPublic = PUBLIC_ROUTES.some((r) => nextUrl.pathname.startsWith(r));
 
-  // Pokud Supabase není nakonfigurován, přeskočit auth
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL === 'your_supabase_url') {
-    return supabaseResponse;
+  // nepřihlášený → login
+  if (!isLoggedIn && !isPublic && nextUrl.pathname !== '/') {
+    return NextResponse.redirect(new URL('/login', nextUrl));
   }
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll: () => request.cookies.getAll(),
-        setAll: (cookiesToSet) => {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
-          );
-          supabaseResponse = NextResponse.next({ request });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          );
-        },
-      },
-    }
-  );
-
-  const { data: { user } } = await supabase.auth.getUser();
-  const pathname = request.nextUrl.pathname;
-  const isPublic = PUBLIC_ROUTES.some((r) => pathname.startsWith(r));
-
-  // Nepřihlášený → přesměrovat na login (kromě veřejných stránek)
-  if (!user && !isPublic && pathname !== '/') {
-    const url = request.nextUrl.clone();
-    url.pathname = '/login';
-    return NextResponse.redirect(url);
+  // přihlášený na login → dashboard
+  if (isLoggedIn && isPublic) {
+    return NextResponse.redirect(new URL('/dashboard', nextUrl));
   }
 
-  // Přihlášený → neukázat login/register stránku
-  if (user && isPublic) {
-    const url = request.nextUrl.clone();
-    url.pathname = '/dashboard';
-    return NextResponse.redirect(url);
-  }
-
-  return supabaseResponse;
-}
+  return NextResponse.next();
+});
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|icons|manifest.json|sw.js|api).*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|icons|manifest.json|sw.js|api/auth).*)'],
 };

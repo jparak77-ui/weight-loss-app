@@ -21,7 +21,7 @@ import type { ActivityLevel, Goal, LossSpeed, DietType, Allergen, Gender } from 
 
 export function ProfileView() {
   const { profile, theme, setTheme, updateProfile, setOnboardingComplete } = useAppStore();
-  const { user, signOut, supabaseReady } = useAuth();
+  const { user, signOut } = useAuth();
   const router = useRouter();
   const [saved, setSaved] = useState(false);
 
@@ -169,13 +169,13 @@ export function ProfileView() {
         <Button variant="ghost" onClick={handleReset} size="sm">
           <RotateCcw size={14} /> Znovu projít nastavení
         </Button>
-        {supabaseReady && user && (
+        {user && (
           <Button variant="danger" onClick={handleSignOut} size="sm">
             <LogOut size={14} /> Odhlásit se
           </Button>
         )}
       </div>
-      {supabaseReady && user && (
+      {user && (
         <div className="text-xs text-slate-500 text-center">Přihlášen jako <strong>{user.email}</strong></div>
       )}
 

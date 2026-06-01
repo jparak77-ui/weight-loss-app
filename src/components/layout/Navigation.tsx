@@ -65,7 +65,7 @@ export function BottomNav() {
 
 export function SideNav() {
   const pathname = usePathname();
-  const { user, signOut, supabaseReady } = useAuth();
+  const { user, signOut } = useAuth();
   const router = useRouter();
 
   const handleSignOut = async () => {
@@ -99,7 +99,7 @@ export function SideNav() {
           );
         })}
       </nav>
-      {supabaseReady && user && (
+      {user && (
         <div className="p-3 border-t border-slate-200 dark:border-slate-700">
           <div className="text-xs text-slate-500 px-3 mb-2 truncate">{user.email}</div>
           <button

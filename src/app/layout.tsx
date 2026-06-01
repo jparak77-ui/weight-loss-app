@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { ServiceWorkerRegistrar } from '@/components/layout/ServiceWorkerRegistrar';
-import { AuthProvider } from '@/components/auth/AuthContext';
+import { SessionProvider } from 'next-auth/react';
 
 export const metadata: Metadata = {
   title: 'NutriPlan — Chytrý jídelníček pro hubnutí',
@@ -29,9 +29,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         <ServiceWorkerRegistrar />
-        <AuthProvider>
+        <SessionProvider>
           {children}
-        </AuthProvider>
+        </SessionProvider>
       </body>
     </html>
   );
