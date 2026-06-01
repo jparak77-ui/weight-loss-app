@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard,
   UtensilsCrossed,
@@ -10,8 +10,10 @@ import {
   Bot,
   User,
   Waves,
+  LogOut,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/components/auth/AuthContext';
 
 const NAV_ITEMS = [
   { href: '/dashboard', label: 'Přehled', icon: LayoutDashboard },
@@ -63,6 +65,13 @@ export function BottomNav() {
 
 export function SideNav() {
   const pathname = usePathname();
+  const { user, signOut, supabaseReady } = useAuth();
+  const router = useRouter();
+
+  const handleSignOut = async () => {
+    await signOut();
+    router.push('/login');
+  };
 
   return (
     <aside className="hidden lg:flex flex-col w-60 min-h-screen bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-700 fixed left-0 top-0 bottom-0 z-40">
@@ -90,6 +99,18 @@ export function SideNav() {
           );
         })}
       </nav>
+      {supabaseReady && user && (
+        <div className="p-3 border-t border-slate-200 dark:border-slate-700">
+          <div className="text-xs text-slate-500 px-3 mb-2 truncate">{user.email}</div>
+          <button
+            onClick={handleSignOut}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-500 dark:text-slate-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+          >
+            <LogOut size={18} />
+            Odhlásit se
+          </button>
+        </div>
+      )}
     </aside>
   );
 }

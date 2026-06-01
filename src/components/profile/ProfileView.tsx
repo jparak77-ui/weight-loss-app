@@ -14,12 +14,21 @@ import {
   ALLERGEN_LABELS,
 } from '@/lib/utils';
 import { calculateBMI, calculateBMR, calculateTDEE, estimateWeeksToGoal, getBMICategory } from '@/lib/calculations';
-import { Sun, Moon, Save, RotateCcw } from 'lucide-react';
+import { Sun, Moon, Save, RotateCcw, LogOut } from 'lucide-react';
+import { useAuth } from '@/components/auth/AuthContext';
+import { useRouter } from 'next/navigation';
 import type { ActivityLevel, Goal, LossSpeed, DietType, Allergen, Gender } from '@/types';
 
 export function ProfileView() {
   const { profile, theme, setTheme, updateProfile, setOnboardingComplete } = useAppStore();
+  const { user, signOut, supabaseReady } = useAuth();
+  const router = useRouter();
   const [saved, setSaved] = useState(false);
+
+  const handleSignOut = async () => {
+    await signOut();
+    router.push('/login');
+  };
 
   if (!profile) return null;
 
@@ -156,11 +165,19 @@ export function ProfileView() {
         </Button>
       </div>
 
-      <div className="pt-2 border-t border-slate-200 dark:border-slate-700">
+      <div className="pt-2 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between flex-wrap gap-2">
         <Button variant="ghost" onClick={handleReset} size="sm">
           <RotateCcw size={14} /> Znovu projít nastavení
         </Button>
+        {supabaseReady && user && (
+          <Button variant="danger" onClick={handleSignOut} size="sm">
+            <LogOut size={14} /> Odhlásit se
+          </Button>
+        )}
       </div>
+      {supabaseReady && user && (
+        <div className="text-xs text-slate-500 text-center">Přihlášen jako <strong>{user.email}</strong></div>
+      )}
 
       {/* Health disclaimer */}
       <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-xl p-4 text-xs text-amber-800 dark:text-amber-300">
