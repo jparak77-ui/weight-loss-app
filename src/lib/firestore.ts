@@ -1,5 +1,5 @@
 import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
-import { db } from './firebase';
+import { firebaseReady, getFirebaseDb } from './firebase';
 import type { UserProfile, WeightLog, MealPlan, ShoppingItem, AIMessage } from '@/types';
 
 export interface UserData {
@@ -12,8 +12,9 @@ export interface UserData {
 }
 
 export async function loadUserData(uid: string): Promise<UserData | null> {
+  if (!firebaseReady) return null;
   try {
-    const snap = await getDoc(doc(db, 'users', uid));
+    const snap = await getDoc(doc(getFirebaseDb(), 'users', uid));
     if (!snap.exists()) return null;
     return snap.data() as UserData;
   } catch {
@@ -22,8 +23,9 @@ export async function loadUserData(uid: string): Promise<UserData | null> {
 }
 
 export async function saveUserData(uid: string, data: Partial<UserData>): Promise<void> {
+  if (!firebaseReady) return;
   try {
-    const ref = doc(db, 'users', uid);
+    const ref = doc(getFirebaseDb(), 'users', uid);
     const snap = await getDoc(ref);
     if (snap.exists()) {
       await updateDoc(ref, data as any);

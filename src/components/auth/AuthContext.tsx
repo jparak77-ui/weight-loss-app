@@ -11,7 +11,7 @@ import {
   updateProfile,
   type User,
 } from 'firebase/auth';
-import { auth, googleProvider } from '@/lib/firebase';
+import { firebaseReady, getFirebaseAuth, googleProvider } from '@/lib/firebase';
 import { loadUserData, saveUserData } from '@/lib/firestore';
 import { useAppStore } from '@/store/appStore';
 
@@ -39,7 +39,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const store = useAppStore();
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, async (u) => {
+    if (!firebaseReady) { setLoading(false); return; }
+    const unsub = onAuthStateChanged(getFirebaseAuth(), async (u) => {
       setUser(u);
       setLoading(false);
 
@@ -66,21 +67,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signInEmail = async (email: string, password: string) => {
-    await signInWithEmailAndPassword(auth, email, password);
+    await signInWithEmailAndPassword(getFirebaseAuth(), email, password);
   };
 
   const signUpEmail = async (email: string, password: string, name: string) => {
-    const cred = await createUserWithEmailAndPassword(auth, email, password);
+    const cred = await createUserWithEmailAndPassword(getFirebaseAuth(), email, password);
     await updateProfile(cred.user, { displayName: name });
     await sendEmailVerification(cred.user);
   };
 
   const signInGoogle = async () => {
-    await signInWithPopup(auth, googleProvider);
+    await signInWithPopup(getFirebaseAuth(), googleProvider);
   };
 
   const signOut = async () => {
-    await fbSignOut(auth);
+    await fbSignOut(getFirebaseAuth());
     store.setOnboardingComplete(false);
     useAppStore.setState({
       profile: null,
