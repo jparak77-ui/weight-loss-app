@@ -1,26 +1,26 @@
-import { auth } from '@/auth';
-import { NextResponse } from 'next/server';
+import { NextResponse, type NextRequest } from 'next/server';
 
-const PUBLIC_ROUTES = ['/login'];
+const PUBLIC_ROUTES = ['/login', '/register'];
 
-export default auth((req) => {
-  const { nextUrl, auth: session } = req;
-  const isLoggedIn = !!session;
-  const isPublic = PUBLIC_ROUTES.some((r) => nextUrl.pathname.startsWith(r));
+export function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+  const isPublic = PUBLIC_ROUTES.some((r) => pathname.startsWith(r));
 
-  // nepřihlášený → login
-  if (!isLoggedIn && !isPublic && nextUrl.pathname !== '/') {
-    return NextResponse.redirect(new URL('/login', nextUrl));
+  // Zkontroluj Firebase UID cookie
+  const uid = request.cookies.get('firebase-uid')?.value;
+  const isLoggedIn = !!uid && uid.length > 10;
+
+  if (!isLoggedIn && !isPublic && pathname !== '/') {
+    return NextResponse.redirect(new URL('/login', request.url));
   }
 
-  // přihlášený na login → dashboard
   if (isLoggedIn && isPublic) {
-    return NextResponse.redirect(new URL('/dashboard', nextUrl));
+    return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
   return NextResponse.next();
-});
+}
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|icons|manifest.json|sw.js|api/auth).*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|icons|manifest.json|sw.js|api).*)'],
 };

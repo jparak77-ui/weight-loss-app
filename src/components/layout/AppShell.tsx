@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { useAppStore } from '@/store/appStore';
 import { BottomNav, SideNav } from './Navigation';
+import { FirestoreSync } from './FirestoreSync';
 import { cn } from '@/lib/utils';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -26,6 +27,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </main>
       <BottomNav />
+      <FirestoreSync />
     </div>
   );
 }
